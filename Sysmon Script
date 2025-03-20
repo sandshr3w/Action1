@@ -1,0 +1,43 @@
+# Specify the URL of the file you want to download
+$url = "https://download.sysinternals.com/files/Sysmon.zip"
+
+# Specify the local path where you want to save the downloaded file
+$localPath = "C:\temp\sysmon.zip"
+
+# Use Invoke-WebRequest to download the file
+Invoke-WebRequest -Uri $url -OutFile $localPath
+
+# Unzip Sysmon
+Expand-Archive -Path 'C:\temp\sysmon.zip' -DestinationPath 'C:\temp\sysmonunzipped' -Force
+
+# Specify the path to your file
+$filePath = "C:\Windows\sysmon64.exe"
+
+# Get the file version using PowerShell
+$currentVersion = (Get-Item $filePath).VersionInfo.FileVersion
+
+# Define your target version
+$targetVersion = "15.15"
+
+ # Define batch file info
+$filePath2 = "C:\temp\sysmon.bat"
+$content = @(
+"cd C:\Windows”,
+"sysmon64.exe -u force",
+"del sysmon64.exe",
+"copy C:\temp\sysmonunzipped\sysmon64.exe",
+"sysmon64.exe -i -accepteula"
+) 
+
+# Create the batch file and write content to it
+Set-Content -Path $filePath2 -Value $content
+
+# Compare versions and install if less than version 15.15
+if ([version]$currentVersion -lt [version]$targetVersion) {
+    & cmd.exe /c C:\temp\sysmon.bat
+} else {
+    Write-Host "The file version $currentVersion is not less than the target version $targetVersion."
+}
+ # Remove installation files and folders
+Remove-Item -Path “C:\temp\*” -Include “*sysmon*” -Recurse -Force -Confirm:$false
+Remove-Item -Path “C:\temp\sysmonunzipped” -Recurse -Force -Confirm:$false
